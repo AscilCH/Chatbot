@@ -1,6 +1,3 @@
-// OpenAI API key (make sure this is stored securely in a production environment)
-const openaiApiKey = '';
-
 let selectedLanguage = 'en'; // Default language
 
 // Handle flag click to change the selected language
@@ -25,8 +22,8 @@ document.getElementById('sendBtn').addEventListener('click', async function () {
     // Clear the input field immediately after capturing the message
     document.getElementById('userInput').value = '';
 
-    // Send user input to OpenAI API and get the response
-    const aiResponse = await fetchOpenAIResponse(userInput);
+    // Send user input to the Vercel serverless function (backend) and get the response
+    const aiResponse = await fetchBackendAIResponse(userInput);
 
     // Display AI response
     addChatMessage('ai', aiResponse);
@@ -42,27 +39,24 @@ function addChatMessage(sender, message) {
     chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
 }
 
-async function fetchOpenAIResponse(userInput) {
+// Function to fetch AI response from Vercel serverless function
+async function fetchBackendAIResponse(userInput) {
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch('/api/openai', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openaiApiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: `You are a helpful assistant that responds in ${selectedLanguage}.` },
-                    { role: 'user', content: userInput }
-                ]
+                userInput: userInput,
+                selectedLanguage: selectedLanguage
             })
         });
 
         const data = await response.json();
-        return data.choices[0].message.content.trim();
+        return data.message;
     } catch (error) {
-        console.error('Error fetching AI response:', error);
+        console.error('Error fetching AI response from backend:', error);
         return "Sorry, I couldn't process your request.";
     }
 }
